@@ -258,7 +258,7 @@
         <label>Take or upload a photo of a recipe</label>
         <input id="recipePhotoInput" type="file" accept="image/*" capture="environment" />
         <div id="ocrProgress" class="file-name-display">No recipe photo selected</div>
-        <p class="hint">On a phone, this opens the rear camera. Keep the page flat, fill the frame, avoid shadows, and stay on the page while OCR finishes.</p>
+        <p class="hint">For best results: photograph only the recipe page, hold the phone directly above it, fill the frame, avoid glare, and keep printed text at least as large as normal body copy.</p>
         <p class="hint">Accepts Word (.docx), RTF, TXT, MD, and CSV. Older .doc files should be saved as .docx first.</p>
         <label>Paste rough recipe or chef notes</label>
         <textarea id="rawRecipe" placeholder="PENNE MODA&#10;Yield: 1 order&#10;Ingredients:&#10;6 oz penne...&#10;Pickup:&#10;Hard sear broccoli..."></textarea>
@@ -1090,6 +1090,40 @@ async function extractRecipeText(file) {
 }
 
 
+
+async function preprocessRecipeImage(file) {
+  const bitmap = await createImageBitmap(file);
+  const maxWidth = 2400;
+  const scale = Math.max(1, Math.min(3, maxWidth / bitmap.width));
+  const width = Math.round(bitmap.width * scale);
+  const height = Math.round(bitmap.height * scale);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bitmap, 0, 0, width, height);
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+
+  // Grayscale, boost contrast, and lightly sharpen dark text against paper.
+  for (let i = 0; i < data.length; i += 4) {
+    const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+    const contrasted = Math.max(0, Math.min(255, (gray - 128) * 1.75 + 128));
+    const cleaned = contrasted > 210 ? 255 : contrasted < 70 ? 0 : contrasted;
+    data[i] = cleaned;
+    data[i + 1] = cleaned;
+    data[i + 2] = cleaned;
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return canvas;
+}
+
 $('recipePhotoInput').addEventListener('change', async e => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
@@ -1118,11 +1152,23 @@ $('recipePhotoInput').addEventListener('change', async e => {
       }
     });
 
-    const result = await worker.recognize(file);
+    progress.textContent = `${file.name} — cleaning image…`;
+    const preparedImage = await preprocessRecipeImage(file);
+
+    await worker.setParameters({
+      tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK,
+      preserve_interword_spaces: '1',
+      user_defined_dpi: '300'
+    });
+
+    const result = await worker.recognize(preparedImage);
     const extracted = (result.data && result.data.text ? result.data.text : '')
       .replace(/\r/g, '')
+      .replace(/[|]{2,}/g, ' ')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
+
+    const confidence = Math.round((result.data && result.data.confidence) || 0);
 
     if (!extracted) {
       progress.textContent = `${file.name} — no readable text found`;
@@ -1130,9 +1176,15 @@ $('recipePhotoInput').addEventListener('change', async e => {
     }
 
     $('rawRecipe').value = extracted;
-    parseRecipe(extracted);
-    progress.textContent = `${file.name} — recipe text imported`;
-    showStatus('Recipe photo read successfully. Proofread quantities, fractions, and temperatures.');
+
+    if (confidence >= 55) {
+      parseRecipe(extracted);
+      progress.textContent = `${file.name} — imported (${confidence}% confidence)`;
+      showStatus('Recipe photo imported. Proofread quantities, fractions, and temperatures.');
+    } else {
+      progress.textContent = `${file.name} — text found, but quality is low (${confidence}%)`;
+      showStatus('OCR quality was low. The text was placed in the notes box for correction before generating the card.');
+    }
   } catch (error) {
     console.error('OCR error:', error);
     progress.textContent = `${file.name} — OCR failed`;
