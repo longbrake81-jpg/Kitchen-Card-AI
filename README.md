@@ -99,28 +99,3 @@ The selected recipe filename now remains visible after the recipe is processed, 
 ## Version 18
 
 The native recipe upload control now keeps showing the selected filename after import. Clicking New clears the file input and removes the filename.
-
-## Version 19
-
-Added recipe-photo import:
-
-- On supported phones, the rear camera can open directly.
-- Existing recipe photographs can also be selected.
-- Browser-based OCR reads the recipe and places the text into the recipe field.
-- The normal card parser runs automatically after OCR.
-- Users should proofread OCR results, especially quantities, fractions, and temperatures.
-
-## Version 20
-
-Recipe-photo OCR now uses explicitly configured worker, core, and language-file paths for better reliability on GitHub Pages and iPhone Safari. Progress and failure messages were improved.
-
-## Version 21
-
-Recipe-photo OCR improvements:
-
-- Enlarges the image before OCR.
-- Converts it to grayscale.
-- Boosts contrast and cleans the paper background.
-- Uses a single-block recipe-text recognition mode.
-- Reports OCR confidence.
-- Low-confidence text is left for correction instead of being automatically mapped into bad recipe fields.
