@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchen Card AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #7b1e1e;
+      --accent: #d8b56a;
+      --ink: #222;
+      --muted: #666;
+      --paper: #fffdf8;
+      --panel: #f4f1ea;
+      --border: #ddd5c8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Montserrat, Arial, sans-serif;
+      color: var(--ink);
+      background: #ece9e3;
+    }
+    button, input, textarea, select { font: inherit; }
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 410px 1fr; }
+    .sidebar {
+      background: #fff;
+      border-right: 1px solid #d7d2ca;
+      padding: 20px;
+      overflow-y: auto;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+    }
+    .main {
+      padding: 24px;
+      overflow: auto;
+    }
+    h1 { margin: 0 0 4px; font-size: 24px; }
+    .tagline { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tab {
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 9px 11px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    .section {
+      background: #faf9f6;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .section h2 { font-size: 14px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .05em; }
+    label { display: block; font-size: 12px; font-weight: 700; margin: 10px 0 5px; }
+    input[type="text"], input[type="date"], input[type="number"], textarea, select {
+      width: 100%;
+      border: 1px solid #cfc8bd;
+      background: #fff;
+      border-radius: 8px;
+      padding: 9px 10px;
+      outline: none;
+    }
+    textarea { min-height: 92px; resize: vertical; line-height: 1.4; }
+    input:focus, textarea:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 15%, transparent); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .btn {
+      border: 0;
+      border-radius: 9px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .btn-primary { background: var(--brand); color: #fff; }
+    .btn-secondary { background: #ece7de; color: #222; }
+    .btn-danger { background: #8c2020; color: #fff; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .hint { color: var(--muted); font-size: 11px; line-height: 1.4; margin-top: 6px; }
+    .file-name-display {
+      margin-top: 6px;
+      min-height: 17px;
+      font-size: 11px;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+    }
+    .status {
+      padding: 10px 12px;
+      border-radius: 9px;
+      background: #edf6ee;
+      border: 1px solid #bfd6c1;
+      color: #214b27;
+      font-size: 12px;
+      display: none;
+      margin-top: 10px;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .toolbar .right { display: flex; gap: 8px; flex-wrap: wrap; }
+    .preview-wrap { display: flex; justify-content: center; }
+    .card {
+      width: 816px;
+      min-height: 1056px;
+      background: var(--paper);
+      box-shadow: 0 15px 40px rgba(0,0,0,.18);
+      position: relative;
+      padding: 42px 48px 52px;
+      overflow: hidden;
+    }
+    .brand-rule { height: 8px; background: var(--brand); margin: -42px -48px 24px; }
+    .card-header { display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start; }
+    .restaurant-name {
+      font-family: "Libre Baskerville", Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--brand);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .logo-box {
+      width: 120px;
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      overflow: hidden;
+      position: relative;
+    }
+    .logo-box img {
+      max-width: none;
+      max-height: none;
+      object-fit: contain;
+      transform-origin: center center;
+      position: relative;
+    }
+    .dish-title {
+      font-family: "Libre Baskerville", Georgia, serif;
+      font-size: 34px;
+      line-height: 1.1;
+      margin: 16px 0 8px;
+      color: #181818;
+    }
+    .meta { display: flex; gap: 20px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin-bottom: 18px; }
+    .photo-frame {
+      height: 310px;
+      border: 1px solid #d9d1c5;
+      background: linear-gradient(135deg, #eee8df, #f7f3ec);
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 50% 50%;
+      display: none;
+      transform-origin: center center;
+    }
+    .photo-placeholder {
+      position: absolute; inset: 0; display: grid; place-items: center; color: #8b8378; font-size: 15px;
+    }
+    .content-grid { display: grid; grid-template-columns: 40% 60%; gap: 26px; }
+    .card h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--brand);
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 6px;
+      margin: 0 0 10px;
+    }
+    .card ul, .card ol { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.45; }
+    .card li { margin-bottom: 5px; }
+    .method-block { font-size: 13px; line-height: 1.48; white-space: pre-line; }
+    .subsection { margin-top: 18px; }
+    .footer {
+      position: absolute;
+      left: 48px; right: 48px; bottom: 22px;
+      border-top: 1px solid #cfc7bb;
+      padding-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #6b655d;
+    }
+    .library-list { display: grid; gap: 10px; }
+    .library-card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px;
+      background: #fff;
+    }
+    .library-card strong { display: block; margin-bottom: 5px; }
+    .library-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .small { padding: 7px 9px; font-size: 11px; }
+    .qc-list { list-style: none; padding: 0; margin: 0; }
+    .qc-list li { padding: 6px 0; font-size: 12px; display: flex; gap: 8px; }
+    .ok { color: #2f7a39; }
+    .warn { color: #9a5e00; }
+    @media (max-width: 1100px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { height: auto; position: static; }
+      .main { overflow: visible; }
+      .card { transform-origin: top center; }
+    }
+    @media print {
+      body { background: #fff; }
+      .sidebar, .toolbar { display: none !important; }
+      .main { padding: 0; }
+      .preview-wrap { display: block; }
+      .card {
+        width: 8.5in;
+        min-height: 11in;
+        box-shadow: none;
+        margin: 0;
+        page-break-after: always;
+      }
+      @page { size: Letter portrait; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <h1>Kitchen Card AI</h1>
+    <p class="tagline">Upload. Generate. Proofread. Approve.</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="builder">Builder</button>
+      <button class="tab" data-tab="brand">Brand</button>
+      <button class="tab" data-tab="library">Library</button>
+    </div>
+
+    <section id="builder" class="panel active">
+      <div class="section">
+        <h2>1. Source Material</h2>
+        <label>Upload food photo</label>
+        <input id="photoInput" type="file" accept="image/*" />
+        <div id="photoFileName" class="file-name-display">No photo selected</div>
+        <label>Upload recipe text file</label>
+        <input id="recipeFileInput" type="file" accept=".docx,.rtf,.txt,.md,.csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/rtf,text/rtf,text/plain,text/markdown,text/csv" />
+        <p class="hint">Accepts Word (.docx), RTF, TXT, MD, and CSV. Older .doc files should be saved as .docx first.</p>
+        <label>Paste rough recipe or chef notes</label>
+        <textarea id="rawRecipe" placeholder="PENNE MODA&#10;Yield: 1 order&#10;Ingredients:&#10;6 oz penne...&#10;Pickup:&#10;Hard sear broccoli..."></textarea>
+        <button id="generateBtn" class="btn btn-primary" style="width:100%;margin-top:10px;">Generate Card</button>
+        <div id="status" class="status"></div>
+      </div>
+
+      <div class="section">
+        <h2>2. Recipe Details</h2>
+        <label>Dish title</label>
+        <input id="dishTitle" type="text" value="New Recipe Card" />
+        <div class="grid2">
+          <div><label>Yield</label><input id="yield" type="text" value="1 order" /></div>
+          <div><label>Station</label><input id="station" type="text" value="Line" /></div>
+        </div>
+        <label>Ingredients — one per line</label>
+        <textarea id="ingredients">8 oz primary ingredient
+4 oz sauce or accompaniment
+1 each garnish</textarea>
+        <label>Pickup / Method</label>
+        <textarea id="method">Cook the dish according to the approved service method. Verify required internal temperature before plating.</textarea>
+        <label>Plating</label>
+        <textarea id="plating">Plate the base component first. Position the protein as shown. Add sauce and garnish. Wipe the rim and serve immediately.</textarea>
+        <label>Internal temperature</label>
+        <input id="temperature" type="text" placeholder="Example: 165°F" />
+        <p class="hint">Only enter the finished food’s required internal temperature—not oven, fryer, grill, oil, or holding temperature.</p>
+        <label>Chef notes</label>
+        <textarea id="notes" placeholder="Optional holding, allergy, or service notes"></textarea>
+      </div>
+
+      <div class="section">
+        <h2>3. Photo Editor</h2>
+        <div class="grid2">
+          <div><label>Horizontal position</label><input id="posX" type="range" min="0" max="100" value="50" /></div>
+          <div><label>Vertical position</label><input id="posY" type="range" min="0" max="100" value="50" /></div>
+        </div>
+        <div class="grid2">
+          <div><label>Photo zoom</label><input id="photoZoom" type="range" min="75" max="200" value="100" /></div>
+          <div><label>Frame height</label><input id="photoHeight" type="range" min="220" max="430" value="310" /></div>
+        </div>
+        <div class="grid2">
+          <div><label>Photo rotation</label><input id="photoRotate" type="range" min="-10" max="10" value="0" /></div>
+          <div><label>Fit mode</label>
+            <select id="photoFit">
+              <option value="cover">Fill frame</option>
+              <option value="contain">Show full photo</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="resetPhotoBtn" class="btn btn-secondary small">Reset Photo</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>4. Revision</h2>
+        <div class="grid2">
+          <div><label>Revision</label><input id="revision" type="text" value="Rev. 1.0" /></div>
+          <div><label>Date</label><input id="revisionDate" type="text" value="July 2026" /></div>
+        </div>
+        <div class="actions">
+          <button id="saveBtn" class="btn btn-primary">Save Card</button>
+          <button id="newBtn" class="btn btn-secondary">New</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Quality Control</h2>
+        <ul id="qcList" class="qc-list"></ul>
+      </div>
+    </section>
+
+    <section id="brand" class="panel">
+      <div class="section">
+        <h2>Restaurant Brand Profile</h2>
+        <label>Header name (optional)</label>
+        <input id="restaurantName" type="text" value="" placeholder="Station, restaurant, department, or leave blank" />
+        <label>Logo</label>
+        <input id="logoInput" type="file" accept="image/*" />
+        <div class="grid2">
+          <div><label>Logo size</label><input id="logoSize" type="range" min="40" max="180" value="100" /></div>
+          <div><label>Logo box width</label><input id="logoBoxWidth" type="range" min="80" max="220" value="120" /></div>
+        </div>
+        <div class="grid2">
+          <div><label>Horizontal position</label><input id="logoPosX" type="range" min="-80" max="80" value="0" /></div>
+          <div><label>Vertical position</label><input id="logoPosY" type="range" min="-40" max="40" value="0" /></div>
+        </div>
+        <label>Logo alignment</label>
+        <select id="logoAlign">
+          <option value="flex-end">Right</option>
+          <option value="center">Center</option>
+          <option value="flex-start">Left</option>
+        </select>
+        <div class="actions">
+          <button id="resetLogoBtn" class="btn btn-secondary small">Reset Logo</button>
+        </div>
+        <div class="grid2">
+          <div><label>Primary color</label><input id="brandColor" type="color" value="#7b1e1e" /></div>
+          <div><label>Accent color</label><input id="accentColor" type="color" value="#d8b56a" /></div>
+        </div>
+        <label>Footer text</label>
+        <input id="footerText" type="text" value="Restaurant Recipe Card System" />
+        <label>Template style</label>
+        <select id="templateStyle">
+          <option value="classic">Classic Restaurant</option>
+          <option value="modern">Modern Minimal</option>
+          <option value="rustic">Rustic Kitchen</option>
+        </select>
+        <div class="actions">
+          <button id="saveBrandBtn" class="btn btn-primary">Save Brand</button>
+          <button id="resetBrandBtn" class="btn btn-secondary">Reset</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="library" class="panel">
+      <div class="section">
+        <h2>Saved Recipe Cards</h2>
+        <div id="libraryList" class="library-list"></div>
+      </div>
+    </section>
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <div>
+        <strong>Live card preview</strong>
+        <div class="hint">Standard US letter layout</div>
+      </div>
+      <div class="right">
+        <button id="pngBtn" class="btn btn-secondary">Export PNG</button>
+        <button id="previewPrintBtn" class="btn btn-secondary">Printable Preview</button>
+        <button id="printBtn" class="btn btn-primary">Print / Save PDF</button>
+      </div>
+    </div>
+
+    <div class="preview-wrap">
+      <article id="recipeCard" class="card">
+        <div class="brand-rule"></div>
+        <div class="card-header">
+          <div>
+            <div id="previewRestaurant" class="restaurant-name" style="display:none;"></div>
+            <div id="previewTitle" class="dish-title">New Recipe Card</div>
+            <div class="meta">
+              <span><strong>Yield:</strong> <span id="previewYield">1 order</span></span>
+              <span><strong>Station:</strong> <span id="previewStation">Line</span></span>
+              <span id="previewTempWrap" style="display:none;"><strong>Temperature:</strong> <span id="previewTemp"></span></span>
+            </div>
+          </div>
+          <div class="logo-box"><img id="previewLogo" alt="Restaurant logo" /></div>
+        </div>
+
+        <div class="photo-frame">
+          <img id="previewPhoto" alt="Dish photo" />
+          <div id="photoPlaceholder" class="photo-placeholder">Upload a finished dish photograph</div>
+        </div>
+
+        <div class="content-grid">
+          <section>
+            <h3>Ingredients</h3>
+            <ul id="previewIngredients"></ul>
+            <div id="notesSection" class="subsection" style="display:none;">
+              <h3>Chef Notes</h3>
+              <div id="previewNotes" class="method-block"></div>
+            </div>
+          </section>
+          <section>
+            <h3>Pickup / Method</h3>
+            <div id="previewMethod" class="method-block"></div>
+            <div class="subsection">
+              <h3>Plating</h3>
+              <div id="previewPlating" class="method-block"></div>
+            </div>
+          </section>
+        </div>
+
+        <footer class="footer">
+          <span id="previewFooter">Restaurant Recipe Card System</span>
+          <span><span id="previewRevision">Rev. 1.0</span> • <span id="previewDate">July 2026</span></span>
+        </footer>
+      </article>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const fields = [
+  'dishTitle','yield','station','ingredients','method','plating','temperature','notes',
+  'revision','revisionDate','restaurantName','footerText'
+];
+let photoData = '';
+let logoData = '';
+let editingId = null;
+
+function lineList(text) {
+  return text.split(/\n+/).map(x => x.trim()).filter(Boolean);
+}
+
+function render() {
+  $('previewTitle').textContent = $('dishTitle').value || 'Untitled Recipe';
+  $('previewYield').textContent = $('yield').value || '—';
+  $('previewStation').textContent = $('station').value || '—';
+  $('previewRestaurant').textContent = $('restaurantName').value.trim();
+  $('previewRestaurant').style.display = $('restaurantName').value.trim() ? 'block' : 'none';
+  $('previewFooter').textContent = $('footerText').value || 'Restaurant Recipe Card System';
+  $('previewRevision').textContent = $('revision').value || 'Rev. 1.0';
+  $('previewDate').textContent = $('revisionDate').value || '';
+  $('previewMethod').textContent = $('method').value;
+  $('previewPlating').textContent = $('plating').value;
+  $('previewNotes').textContent = $('notes').value;
+  $('notesSection').style.display = $('notes').value.trim() ? 'block' : 'none';
+
+  const temp = $('temperature').value.trim();
+  $('previewTemp').textContent = temp;
+  $('previewTempWrap').style.display = temp ? 'inline' : 'none';
+
+  const ul = $('previewIngredients');
+  ul.innerHTML = '';
+  lineList($('ingredients').value).forEach(item => {
+    const li = document.createElement('li');
+    li.textContent = item;
+    ul.appendChild(li);
+  });
+
+  document.documentElement.style.setProperty('--brand', $('brandColor').value);
+  document.documentElement.style.setProperty('--accent', $('accentColor').value);
+
+  const style = $('templateStyle').value;
+  const card = $('recipeCard');
+  if (style === 'modern') {
+    card.style.setProperty('--paper', '#ffffff');
+    $('previewRestaurant').style.fontFamily = 'Montserrat, Arial, sans-serif';
+    $('previewTitle').style.fontFamily = 'Montserrat, Arial, sans-serif';
+    $('previewTitle').style.fontWeight = '700';
+  } else if (style === 'rustic') {
+    card.style.setProperty('--paper', '#fffaf0');
+    $('previewRestaurant').style.fontFamily = '"Libre Baskerville", Georgia, serif';
+    $('previewTitle').style.fontFamily = '"Libre Baskerville", Georgia, serif';
+  } else {
+    card.style.setProperty('--paper', '#fffdf8');
+    $('previewRestaurant').style.fontFamily = '"Libre Baskerville", Georgia, serif';
+    $('previewTitle').style.fontFamily = '"Libre Baskerville", Georgia, serif';
+  }
+
+  $('previewPhoto').style.objectPosition = `${$('posX').value}% ${$('posY').value}%`;
+  $('previewPhoto').style.objectFit = $('photoFit').value;
+  $('previewPhoto').style.transform = `scale(${$('photoZoom').value / 100}) rotate(${$('photoRotate').value}deg)`;
+  document.querySelector('.photo-frame').style.height = `${$('photoHeight').value}px`;
+
+  const logoBox = document.querySelector('.logo-box');
+  const logoImg = $('previewLogo');
+  logoBox.style.width = `${$('logoBoxWidth').value}px`;
+  logoBox.style.justifyContent = $('logoAlign').value;
+  logoImg.style.width = `${$('logoSize').value}%`;
+  logoImg.style.height = 'auto';
+  logoImg.style.transform = `translate(${$('logoPosX').value}px, ${$('logoPosY').value}px)`;
+
+  runQC();
+}
+
+function runQC() {
+  const checks = [
+    [$('dishTitle').value.trim().length > 2, 'Dish title entered'],
+    [lineList($('ingredients').value).length >= 2, 'At least two ingredient lines'],
+    [$('method').value.trim().length >= 20, 'Pickup method is detailed'],
+    [$('plating').value.trim().length >= 15, 'Plating instructions included'],
+    [!!photoData, 'Food photo uploaded'],
+    [!!$('revision').value.trim(), 'Revision number included'],
+    [!!$('revisionDate').value.trim(), 'Revision date included'],
+  ];
+  const list = $('qcList');
+  list.innerHTML = '';
+  checks.forEach(([ok, text]) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="${ok ? 'ok' : 'warn'}">${ok ? '✓' : '⚠'}</span><span>${text}</span>`;
+    list.appendChild(li);
+  });
+}
+
+function detectSection(lines, labels) {
+  const indexes = [];
+  lines.forEach((line, i) => {
+    const normalized = line.toLowerCase().replace(/[:\-]/g,'').trim();
+    labels.forEach(label => {
+      if (normalized === label || normalized.startsWith(label + ' ')) indexes.push(i);
+    });
+  });
+  return indexes.length ? indexes[0] : -1;
+}
+
+function normalizeImportedRecipeText(raw) {
+  let text = String(raw || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\r/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n');
+
+  // Word extraction sometimes glues numbered steps together: "heat.2. Add".
+  text = text.replace(/([.!?])\s*(?=(?:\d{1,2})[.)]\s*[A-Z])/g, '$1\n');
+  text = text.replace(/([^\n])\s+(?=(?:\d{1,2})[.)]\s+)/g, '$1\n');
+
+  // Preserve bullets as separate lines.
+  text = text.replace(/\s*[•·▪]\s*/g, '\n• ');
+
+  let lines = text.split('\n').map(x => x.trim()).filter(Boolean);
+
+  // Remove Word table scaffolding that is not recipe content.
+  lines = lines.filter(line => !/^(amount|quantity|qty\.?|ingredient name)$/i.test(line));
+
+  // Some Word tables emit a duplicate CHEF NOTES column heading before the
+  // ingredient rows. Keep the later, real notes heading after the method.
+  const methodIndex = lines.findIndex(x => /^(pickup\s*\/\s*method|pickup|method|directions|instructions|procedure)\s*:??$/i.test(x));
+  const noteIndexes = lines.map((x,i) => /^(chef notes|notes|service notes)\s*:??$/i.test(x) ? i : -1).filter(i => i >= 0);
+  if (methodIndex >= 0 && noteIndexes.length > 1) {
+    const premature = noteIndexes.filter(i => i < methodIndex);
+    if (premature.length) lines.splice(premature[0], 1);
+  }
+
+  return lines.join('\n').trim();
+}
+
+function isQuantityLine(line) {
+  return /^(?:\d+(?:[ .]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+[¼½¾⅓⅔⅛⅜⅝⅞]|one|two|three|four|five)\s*(?:cups?|c\.?|tbsp\.?|tablespoons?|tsp\.?|teaspoons?|oz\.?|ounces?|lb\.?|lbs\.?|pounds?|g|kg|ml|l|qt\.?|quarts?|gal\.?|gallons?|each|ea\.?|cloves?|bunch(?:es)?|pinch(?:es)?|to taste)?$/i.test(line.trim());
+}
+
+function rebuildIngredientLines(lines) {
+  const cleaned = lines.filter(x => !/^(amount|quantity|qty\.?)$/i.test(x));
+  const result = [];
+  for (let i = 0; i < cleaned.length; i++) {
+    const current = cleaned[i];
+    const next = cleaned[i + 1];
+    if (next && !isQuantityLine(current) && isQuantityLine(next)) {
+      result.push(`${current} — ${next}`);
+      i++;
+    } else {
+      result.push(current.replace(/^[-•]\s*/, ''));
+    }
+  }
+  return result;
+}
+
+function parseRecipe(raw) {
+  const normalizedRaw = normalizeImportedRecipeText(raw);
+  const lines = normalizedRaw.split(/\n/).map(x => x.trim()).filter(Boolean);
+  if (!lines.length) return;
+
+  // A new import replaces the previous recipe completely. Clear every
+  // import-driven field first so missing sections stay blank instead of
+  // retaining content from the previously loaded recipe.
+  $('yield').value = '';
+  $('station').value = '';
+  $('ingredients').value = '';
+  $('method').value = '';
+  $('plating').value = '';
+  $('temperature').value = '';
+  $('notes').value = '';
+
+  let title = lines[0].replace(/^title\s*:\s*/i, '').trim();
+  if (title.length > 60) title = 'New Recipe Card';
+
+  const ingredientIdx = detectSection(lines, ['ingredients','ingredient']);
+  const methodIdx = detectSection(lines, ['pickup / method','pickup','method','directions','instructions','procedure']);
+  const platingIdx = detectSection(lines, ['plating','plate','presentation']);
+  const notesIdx = detectSection(lines, ['chef notes','notes','service notes']);
+
+  const joined = lines.join('\n');
+  const yieldMatch = joined.match(/\byield\s*:\s*(.*?)(?=\s+station\s*:|\n|$)/i);
+  const stationMatch = joined.match(/\bstation\s*:\s*(.*?)(?=\n|$)/i);
+  const tempLine = lines.find(x =>
+    /(?:internal\s+(?:temperature|temp)|minimum\s+internal|cook(?:ed)?\s+to|until\s+(?:the\s+)?(?:center|centre|middle|thickest\s+part)\s+(?:reaches|registers)|target\s+(?:temperature|temp)|pull\s+(?:temperature|temp))\b/i.test(x)
+    && !/(?:oven|fryer|oil|grill|flat\s*top|griddle|holding|hold|steam\s*well|water\s*bath|sous\s*vide|preheat|bake\s+at|roast\s+at|fry\s+at)/i.test(x)
+  );
+
+  if (yieldMatch) $('yield').value = yieldMatch[1].trim();
+  if (stationMatch) $('station').value = stationMatch[1].trim();
+  if (tempLine) {
+    const m = tempLine.match(/(\d{2,3})\s*(?:°|degrees?\s*)?f\b/i);
+    $('temperature').value = m ? `${m[1]}°F` : '';
+  } else {
+    $('temperature').value = '';
+  }
+
+  const boundaries = [ingredientIdx, methodIdx, platingIdx, notesIdx, lines.length].filter(x => x >= 0).sort((a,b)=>a-b);
+  const nextBoundary = idx => boundaries.find(x => x > idx) ?? lines.length;
+
+  if (ingredientIdx >= 0) {
+    const ingredientBlock = lines.slice(ingredientIdx + 1, nextBoundary(ingredientIdx))
+      .filter(x => !/^yield\s*:|^station\s*:/i.test(x));
+    $('ingredients').value = rebuildIngredientLines(ingredientBlock).join('\n');
+  } else {
+    const likelyIngredients = lines.slice(1).filter(x => /^(\d|½|¼|¾|⅓|⅔|one|two|three|\d+\s*(oz|lb|cup|tbsp|tsp|each))/i.test(x));
+    if (likelyIngredients.length) $('ingredients').value = rebuildIngredientLines(likelyIngredients).join('\n');
+  }
+
+  if (methodIdx >= 0) {
+    $('method').value = lines.slice(methodIdx + 1, nextBoundary(methodIdx))
+      .map(x => x.replace(/^(\d+)[.)]\s*/, '$1. '))
+      .join('\n');
+  }
+  if (platingIdx >= 0) $('plating').value = lines.slice(platingIdx + 1, nextBoundary(platingIdx)).join('\n');
+  if (notesIdx >= 0) $('notes').value = lines.slice(notesIdx + 1, nextBoundary(notesIdx)).map(x => x.replace(/^•\s*/, '• ')).join('\n');
+
+  $('rawRecipe').value = normalizedRaw;
+  $('dishTitle').value = title;
+  showStatus('Recipe organized into the card. Word tables and numbered steps were cleaned automatically. Review quantities, temperatures, and plating before approval.');
+  render();
+}
+
+function showStatus(msg) {
+  const s = $('status');
+  s.textContent = msg;
+  s.style.display = 'block';
+  setTimeout(() => s.style.display = 'none', 4500);
+}
+
+function saveBrand() {
+  const brand = {
+    restaurantName: $('restaurantName').value,
+    footerText: $('footerText').value,
+    brandColor: $('brandColor').value,
+    accentColor: $('accentColor').value,
+    templateStyle: $('templateStyle').value,
+    logoSize: $('logoSize').value,
+    logoBoxWidth: $('logoBoxWidth').value,
+    logoPosX: $('logoPosX').value,
+    logoPosY: $('logoPosY').value,
+    logoAlign: $('logoAlign').value,
+    logoData
+  };
+  localStorage.setItem('kitchenCardBrand', JSON.stringify(brand));
+  showStatus('Brand profile saved.');
+  render();
+}
+
+function loadBrand() {
+  const brand = JSON.parse(localStorage.getItem('kitchenCardBrand') || 'null');
+  if (!brand) return;
+  Object.entries(brand).forEach(([k,v]) => {
+    if ($(k) && k !== 'logoData') $(k).value = v;
+  });
+  logoData = brand.logoData || '';
+  if (logoData) {
+    $('previewLogo').src = logoData;
+    $('previewLogo').style.display = 'block';
+  }
+}
+
+
+function openAssetDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open('KitchenCardAssets', 1);
+    request.onupgradeneeded = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('assets')) db.createObjectStore('assets');
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function saveAsset(dataUrl) {
+  if (!dataUrl) return null;
+  const id = crypto.randomUUID();
+  const db = await openAssetDB();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('assets', 'readwrite');
+    tx.objectStore('assets').put(dataUrl, id);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+  return id;
+}
+
+async function loadAsset(id) {
+  if (!id) return '';
+  const db = await openAssetDB();
+  const value = await new Promise((resolve, reject) => {
+    const tx = db.transaction('assets', 'readonly');
+    const req = tx.objectStore('assets').get(id);
+    req.onsuccess = () => resolve(req.result || '');
+    req.onerror = () => reject(req.error);
+  });
+  db.close();
+  return value;
+}
+
+async function deleteAsset(id) {
+  if (!id) return;
+  const db = await openAssetDB();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction('assets', 'readwrite');
+    tx.objectStore('assets').delete(id);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+  db.close();
+}
+
+function getCards() {
+  return JSON.parse(localStorage.getItem('kitchenCards') || '[]');
+}
+
+async function saveCard() {
+  try {
+    const cards = getCards();
+    const photoAssetId = await saveAsset(photoData);
+    const logoAssetId = await saveAsset(logoData);
+
+    const data = {
+      id: crypto.randomUUID(),
+      updatedAt: new Date().toISOString(),
+      fields: Object.fromEntries(fields.map(id => [id, $(id).value])),
+      brandColor: $('brandColor').value,
+      accentColor: $('accentColor').value,
+      templateStyle: $('templateStyle').value,
+      photoSettings: {
+        posX: $('posX').value,
+        posY: $('posY').value,
+        zoom: $('photoZoom').value,
+        height: $('photoHeight').value,
+        rotate: $('photoRotate').value,
+        fit: $('photoFit').value
+      },
+      logoSettings: {
+        size: $('logoSize').value,
+        boxWidth: $('logoBoxWidth').value,
+        posX: $('logoPosX').value,
+        posY: $('logoPosY').value,
+        align: $('logoAlign').value
+      },
+      photoAssetId,
+      logoAssetId
+    };
+
+    cards.unshift(data);
+    localStorage.setItem('kitchenCards', JSON.stringify(cards));
+    editingId = data.id;
+    showStatus(`Saved ${data.fields.revision || 'Rev. 1.0'} as a new version.`);
+    renderLibrary();
+  } catch (err) {
+    console.error(err);
+    alert('The card could not be saved. Your browser may be blocking local storage, or storage may be full.');
+  }
+}
+
+async function loadCard(id) {
+  const card = getCards().find(c => c.id === id);
+  if (!card) return;
+  Object.entries(card.fields).forEach(([k,v]) => { if ($(k)) $(k).value = v; });
+  $('brandColor').value = card.brandColor || '#7b1e1e';
+  $('accentColor').value = card.accentColor || '#d8b56a';
+  $('templateStyle').value = card.templateStyle || 'classic';
+  if (card.photoSettings) {
+    $('posX').value = card.photoSettings.posX ?? 50;
+    $('posY').value = card.photoSettings.posY ?? 50;
+    $('photoZoom').value = card.photoSettings.zoom ?? 100;
+    $('photoHeight').value = card.photoSettings.height ?? 310;
+    $('photoRotate').value = card.photoSettings.rotate ?? 0;
+    $('photoFit').value = card.photoSettings.fit ?? 'cover';
+  }
+  if (card.logoSettings) {
+    $('logoSize').value = card.logoSettings.size ?? 100;
+    $('logoBoxWidth').value = card.logoSettings.boxWidth ?? 120;
+    $('logoPosX').value = card.logoSettings.posX ?? 0;
+    $('logoPosY').value = card.logoSettings.posY ?? 0;
+    $('logoAlign').value = card.logoSettings.align ?? 'flex-end';
+  }
+  photoData = card.photoData || await loadAsset(card.photoAssetId);
+  logoData = card.logoData || await loadAsset(card.logoAssetId);
+  $('photoInput').value = '';
+  $('recipeFileInput').value = '';
+  $('photoFileName').textContent = photoData ? 'Saved photo loaded' : 'No photo selected';
+  if (photoData) {
+    $('previewPhoto').src = photoData;
+    $('previewPhoto').style.display = 'block';
+    $('photoPlaceholder').style.display = 'none';
+  }
+  if (logoData) {
+    $('previewLogo').src = logoData;
+    $('previewLogo').style.display = 'block';
+  }
+  editingId = id;
+  switchTab('builder');
+  render();
+}
+
+async function deleteCard(id) {
+  const cards = getCards();
+  const card = cards.find(c => c.id === id);
+  const remaining = cards.filter(c => c.id !== id);
+  localStorage.setItem('kitchenCards', JSON.stringify(remaining));
+  if (card) {
+    await deleteAsset(card.photoAssetId);
+    await deleteAsset(card.logoAssetId);
+  }
+  if (editingId === id) editingId = null;
+  renderLibrary();
+}
+
+function renderLibrary() {
+  const list = $('libraryList');
+  const cards = getCards();
+  list.innerHTML = '';
+
+  if (!cards.length) {
+    list.innerHTML = '<p class="hint">No cards saved yet.</p>';
+    return;
+  }
+
+  const groups = new Map();
+  cards.forEach(card => {
+    const title = (card.fields && card.fields.dishTitle) || 'Untitled Recipe';
+    if (!groups.has(title)) groups.set(title, []);
+    groups.get(title).push(card);
+  });
+
+  [...groups.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .forEach(([title, versions]) => {
+      versions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+      const group = document.createElement('div');
+      group.className = 'library-card';
+
+      const versionRows = versions.map(card => {
+        const revision = (card.fields && card.fields.revision) || 'Rev. 1.0';
+        const revisionDate = (card.fields && card.fields.revisionDate) || '';
+        const saved = new Date(card.updatedAt).toLocaleString();
+        return `
+          <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:8px;">
+            <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;">
+              <strong style="margin:0;">${revision}</strong>
+              <span class="hint">${revisionDate}</span>
+            </div>
+            <div class="hint">Saved ${saved}</div>
+            <div class="library-actions">
+              <button class="btn btn-secondary small" data-load="${card.id}">Open</button>
+              <button class="btn btn-danger small" data-delete="${card.id}">Delete version</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      group.innerHTML = `
+        <strong>${title}</strong>
+        <div class="hint">${versions.length} saved version${versions.length === 1 ? '' : 's'}</div>
+        ${versionRows}`;
+
+      list.appendChild(group);
+    });
+
+  list.querySelectorAll('[data-load]').forEach(b => b.onclick = () => loadCard(b.dataset.load));
+  list.querySelectorAll('[data-delete]').forEach(b => b.onclick = () => deleteCard(b.dataset.delete));
+}
+
+function newCard() {
+  editingId = null;
+  $('photoInput').value = '';
+  $('recipeFileInput').value = '';
+  $('photoFileName').textContent = 'No photo selected';
+  $('dishTitle').value = 'New Recipe Card';
+  $('yield').value = '1 order';
+  $('station').value = 'Line';
+  $('ingredients').value = '';
+  $('method').value = '';
+  $('plating').value = '';
+  $('temperature').value = '';
+  $('notes').value = '';
+  $('revision').value = 'Rev. 1.0';
+  photoData = '';
+  $('posX').value = 50;
+  $('posY').value = 50;
+  $('photoZoom').value = 100;
+  $('photoHeight').value = 310;
+  $('photoRotate').value = 0;
+  $('photoFit').value = 'cover';
+  $('previewPhoto').src = '';
+  $('previewPhoto').style.display = 'none';
+  $('photoPlaceholder').style.display = 'grid';
+  render();
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === id));
+  if (id === 'library') renderLibrary();
+}
+
+document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
+[...fields, 'brandColor','accentColor','templateStyle','posX','posY','photoZoom','photoHeight','photoRotate','photoFit','logoSize','logoBoxWidth','logoPosX','logoPosY','logoAlign'].forEach(id => $(id).addEventListener('input', render));
+
+$('photoInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  $('photoFileName').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = () => {
+    photoData = reader.result;
+    $('previewPhoto').src = photoData;
+    $('previewPhoto').style.display = 'block';
+    $('photoPlaceholder').style.display = 'none';
+    render();
+  };
+  reader.readAsDataURL(file);
+});
+
+$('logoInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    logoData = reader.result;
+    $('previewLogo').src = logoData;
+    $('previewLogo').style.display = 'block';
+    render();
+  };
+  reader.readAsDataURL(file);
+});
+
+async function extractRecipeText(file) {
+  const name = file.name.toLowerCase();
+  const extension = name.includes('.') ? name.split('.').pop() : '';
+
+  if (['txt', 'md', 'csv'].includes(extension) || file.type.startsWith('text/plain')) {
+    return await file.text();
+  }
+
+  if (extension === 'rtf' || file.type === 'application/rtf' || file.type === 'text/rtf') {
+    const rtf = await file.text();
+    return rtf
+      .replace(/\\par[d]?/g, '\n')
+      .replace(/\\'[0-9a-fA-F]{2}/g, ' ')
+      .replace(/\\[a-zA-Z]+-?\d* ?/g, '')
+      .replace(/[{}]/g, '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  if (extension === 'docx' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+    if (typeof mammoth === 'undefined') {
+      throw new Error('The Word reader could not load. Check your internet connection and reopen the app.');
+    }
+    const arrayBuffer = await file.arrayBuffer();
+
+    // HTML conversion preserves table rows, list items, and paragraph breaks
+    // much better than a raw-text extraction.
+    const result = await mammoth.convertToHtml({ arrayBuffer }, {
+      includeDefaultStyleMap: true,
+      styleMap: [
+        "p[style-name='Title'] => h1:fresh",
+        "p[style-name='Heading 1'] => h2:fresh",
+        "p[style-name='Heading 2'] => h3:fresh"
+      ]
+    });
+    const doc = new DOMParser().parseFromString(result.value, 'text/html');
+    const output = [];
+
+    function pushText(value) {
+      const text = String(value || '').replace(/\s+/g, ' ').trim();
+      if (text) output.push(text);
+    }
+
+    Array.from(doc.body.children).forEach(node => {
+      const tag = node.tagName.toLowerCase();
+      if (tag === 'table') {
+        Array.from(node.querySelectorAll('tr')).forEach(row => {
+          const cells = Array.from(row.querySelectorAll(':scope > td, :scope > th'))
+            .map(cell => cell.textContent.replace(/\s+/g, ' ').trim())
+            .filter(Boolean);
+          if (!cells.length) return;
+          if (cells.length >= 2 && !/^(ingredients?|amount|quantity|qty\.?|chef notes?)$/i.test(cells.join(' '))) {
+            const name = cells[0];
+            const amount = cells[1];
+            if (/^(amount|quantity|qty\.?)$/i.test(name)) return;
+            if (/^(ingredient|ingredients)$/i.test(name) && /^(amount|quantity|qty\.?)$/i.test(amount)) {
+              output.push('INGREDIENTS');
+            } else if (name && amount) {
+              output.push(`${name} — ${amount}`);
+            } else {
+              cells.forEach(pushText);
+            }
+          } else {
+            cells.forEach(pushText);
+          }
+        });
+      } else if (tag === 'ul' || tag === 'ol') {
+        Array.from(node.querySelectorAll(':scope > li')).forEach((li, index) => {
+          const prefix = tag === 'ol' ? `${index + 1}. ` : '• ';
+          pushText(prefix + li.textContent);
+        });
+      } else {
+        pushText(node.textContent);
+      }
+    });
+
+    return normalizeImportedRecipeText(output.join('\n'));
+  }
+
+  if (extension === 'pdf' || file.type === 'application/pdf') {
+    let pdfjsLib;
+    try {
+      pdfjsLib = await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
+    } catch (error) {
+      throw new Error('The PDF reader could not load. Check your internet connection and reopen the app.');
+    }
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+    const data = new Uint8Array(await file.arrayBuffer());
+    const pdf = await pdfjsLib.getDocument({ data }).promise;
+    const pages = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      pages.push(content.items.map(item => item.str).join(' '));
+    }
+    return pages.join('\n\n').trim();
+  }
+
+  if (extension === 'doc') {
+    throw new Error('Older .doc files are not supported in the browser. Open the file in Word and save it as .docx.');
+  }
+
+  throw new Error('Unsupported recipe format. Use DOCX, RTF, TXT, MD, or CSV.');
+}
+
+$('recipeFileInput').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    showStatus(`Reading ${file.name}…`);
+    const text = await extractRecipeText(file);
+    if (!text.trim()) throw new Error('No readable recipe text was found in that file.');
+    $('rawRecipe').value = text;
+    parseRecipe(text);
+  } catch (error) {
+    showStatus(error.message || 'The recipe file could not be read.');
+  }
+});
+
+$('generateBtn').onclick = () => parseRecipe($('rawRecipe').value);
+$('saveBtn').onclick = () => saveCard();
+$('newBtn').onclick = newCard;
+$('saveBrandBtn').onclick = saveBrand;
+$('resetBrandBtn').onclick = () => {
+  localStorage.removeItem('kitchenCardBrand');
+  $('restaurantName').value = '';
+  $('footerText').value = 'Restaurant Recipe Card System';
+  $('brandColor').value = '#7b1e1e';
+  $('accentColor').value = '#d8b56a';
+  $('templateStyle').value = 'classic';
+  $('logoSize').value = 100;
+  $('logoBoxWidth').value = 120;
+  $('logoPosX').value = 0;
+  $('logoPosY').value = 0;
+  $('logoAlign').value = 'flex-end';
+  logoData = '';
+  $('previewLogo').src = '';
+  render();
+};
+$('resetPhotoBtn').onclick = () => {
+  $('posX').value = 50;
+  $('posY').value = 50;
+  $('photoZoom').value = 100;
+  $('photoHeight').value = 310;
+  $('photoRotate').value = 0;
+  $('photoFit').value = 'cover';
+  render();
+};
+
+$('resetLogoBtn').onclick = () => {
+  $('logoSize').value = 100;
+  $('logoBoxWidth').value = 120;
+  $('logoPosX').value = 0;
+  $('logoPosY').value = 0;
+  $('logoAlign').value = 'flex-end';
+  render();
+};
+
+function openPrintablePreview(autoPrint = false) {
+  const card = $('recipeCard').cloneNode(true);
+  card.removeAttribute('id');
+
+  const styleText = Array.from(document.styleSheets).map(sheet => {
+    try {
+      return Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n');
+    } catch (e) {
+      return '';
+    }
+  }).join('\n');
+
+  const win = window.open('', '_blank');
+  if (!win) {
+    alert('The browser blocked the printable preview. Allow pop-ups for this page, then try again.');
+    return;
+  }
+
+  win.document.open();
+  win.document.write(`<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>${($('dishTitle').value || 'Recipe Card').replace(/[<>]/g, '')}</title>
+<style>
+${styleText}
+html, body { margin: 0; padding: 0; background: #d9d9d9; }
+.print-page { min-height: 100vh; display: flex; justify-content: center; padding: 24px; }
+.print-sheet {
+  width: 8.5in;
+  height: 11in;
+  background: white;
+  overflow: hidden;
+  flex: 0 0 auto;
+  box-shadow: 0 15px 40px rgba(0,0,0,.18);
+}
+.print-controls { position: fixed; top: 12px; right: 12px; z-index: 9999; display: flex; gap: 8px; }
+.print-controls button { border: 0; border-radius: 8px; padding: 10px 14px; font: 700 14px Arial, sans-serif; cursor: pointer; }
+.print-now { background: ${$('brandColor').value}; color: white; }
+.close-preview { background: white; color: #222; }
+.card {
+  width: 8.5in !important;
+  min-height: 11in !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  transform-origin: top left !important;
+  flex: 0 0 auto;
+}
+@media print {
+  html, body { width: 8.5in; height: 11in; background: #fff !important; overflow: hidden !important; }
+  .print-controls { display: none !important; }
+  .print-page { width: 8.5in; height: 11in; display: block; padding: 0; margin: 0; overflow: hidden; }
+  .print-sheet { width: 8.5in; height: 11in; box-shadow: none !important; overflow: hidden; page-break-after: avoid; break-after: avoid-page; }
+  .card { margin: 0 !important; box-shadow: none !important; page-break-inside: avoid; break-inside: avoid-page; }
+  @page { size: Letter portrait; margin: 0; }
+}
+</style>
+</head>
+<body>
+<div class="print-controls">
+  <button class="close-preview" onclick="window.close()">Close</button>
+  <button class="print-now" onclick="window.print()">Print / Save PDF</button>
+</div>
+<div class="print-page"><div class="print-sheet">${card.outerHTML}</div></div>
+<script>
+function fitCardToLetter() {
+  const card = document.querySelector('.card');
+  const sheet = document.querySelector('.print-sheet');
+  if (!card || !sheet) return;
+  card.style.transform = 'none';
+  const availableWidth = sheet.clientWidth;
+  const availableHeight = sheet.clientHeight;
+  const neededWidth = card.scrollWidth;
+  const neededHeight = card.scrollHeight;
+  const scale = Math.min(1, availableWidth / neededWidth, availableHeight / neededHeight);
+  card.style.transform = 'scale(' + scale + ')';
+}
+window.addEventListener('load', () => {
+  fitCardToLetter();
+  setTimeout(fitCardToLetter, 250);
+});
+window.addEventListener('beforeprint', fitCardToLetter);
+<\/script>
+</body>
+</html>`);
+  win.document.close();
+  win.focus();
+  if (autoPrint) {
+    setTimeout(() => {
+      try { win.fitCardToLetter(); } catch (e) {}
+      win.print();
+    }, 750);
+  }
+}
+
+$('previewPrintBtn').onclick = () => openPrintablePreview(false);
+$('printBtn').onclick = () => openPrintablePreview(true);
+
+$('pngBtn').onclick = async () => {
+  if (typeof html2canvas === 'undefined') {
+    alert('PNG export library could not load. Use Print / Save PDF instead.');
+    return;
+  }
+  const canvas = await html2canvas($('recipeCard'), { scale: 2, backgroundColor: '#fffdf8', useCORS: true });
+  const link = document.createElement('a');
+  const safe = ($('dishTitle').value || 'recipe-card').replace(/[^a-z0-9]+/gi, '_');
+  link.download = `${safe}_${$('revision').value.replace(/\s+/g,'_')}.png`;
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+};
+
+loadBrand();
+render();
+renderLibrary();
+</script>
+</body>
+</html>
