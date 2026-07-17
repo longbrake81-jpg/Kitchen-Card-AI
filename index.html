@@ -176,6 +176,75 @@
       position: absolute; inset: 0; display: grid; place-items: center; color: #8b8378; font-size: 15px;
     }
     .content-grid { display: grid; grid-template-columns: 40% 60%; gap: 26px; }
+
+    .top-layout {
+      display: block;
+    }
+
+    .card.layout-split .top-layout {
+      display: grid;
+      grid-template-columns: 42% 58%;
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 22px;
+    }
+
+    .card.layout-split .card-header {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      min-width: 0;
+      padding: 8px 0;
+    }
+
+    .card.layout-split .card-header > div:first-child {
+      width: 100%;
+    }
+
+    .card.layout-split .logo-box {
+      order: -1;
+      align-self: flex-start;
+      justify-content: flex-start;
+      margin-bottom: 18px;
+      max-width: 100%;
+    }
+
+    .card.layout-split .restaurant-name {
+      font-size: 18px;
+      margin-bottom: 14px;
+    }
+
+    .card.layout-split .dish-title {
+      font-size: 38px;
+      line-height: 1.08;
+      margin: 8px 0 18px;
+      overflow-wrap: anywhere;
+    }
+
+    .card.layout-split .meta {
+      display: grid;
+      gap: 9px;
+      margin-bottom: 0;
+      font-size: 12px;
+    }
+
+    .card.layout-split .photo-frame {
+      margin-bottom: 0;
+      min-height: 300px;
+      height: 100%;
+    }
+
+    .card.layout-split .photo-placeholder {
+      padding: 24px;
+      text-align: center;
+    }
+
+    @media (max-width: 700px) {
+      .card.layout-split .top-layout {
+        grid-template-columns: 42% 58%;
+        gap: 18px;
+      }
+    }
     .card h3 {
       font-size: 13px;
       text-transform: uppercase;
@@ -363,6 +432,12 @@
           <option value="modern">Modern Minimal</option>
           <option value="rustic">Rustic Kitchen</option>
         </select>
+        <label>Card layout</label>
+        <select id="layoutStyle">
+          <option value="stacked">Standard — title above photo</option>
+          <option value="split">Split header — title left, photo right</option>
+        </select>
+        <p class="hint">The split layout is modeled after traditional culinary build sheets with the identity block and dish title beside the food photograph.</p>
         <div class="actions">
           <button id="saveBrandBtn" class="btn btn-primary">Save Brand</button>
           <button id="resetBrandBtn" class="btn btn-secondary">Reset</button>
@@ -394,22 +469,24 @@
     <div class="preview-wrap">
       <article id="recipeCard" class="card">
         <div class="brand-rule"></div>
-        <div class="card-header">
-          <div>
-            <div id="previewRestaurant" class="restaurant-name" style="display:none;"></div>
-            <div id="previewTitle" class="dish-title">New Recipe Card</div>
-            <div class="meta">
-              <span><strong>Yield:</strong> <span id="previewYield">1 order</span></span>
-              <span><strong>Station:</strong> <span id="previewStation">Line</span></span>
-              <span id="previewTempWrap" style="display:none;"><strong>Temperature:</strong> <span id="previewTemp"></span></span>
+        <div class="top-layout">
+          <div class="card-header">
+            <div>
+              <div id="previewRestaurant" class="restaurant-name" style="display:none;"></div>
+              <div id="previewTitle" class="dish-title">New Recipe Card</div>
+              <div class="meta">
+                <span><strong>Yield:</strong> <span id="previewYield">1 order</span></span>
+                <span><strong>Station:</strong> <span id="previewStation">Line</span></span>
+                <span id="previewTempWrap" style="display:none;"><strong>Temperature:</strong> <span id="previewTemp"></span></span>
+              </div>
             </div>
+            <div class="logo-box"><img id="previewLogo" alt="Restaurant logo" /></div>
           </div>
-          <div class="logo-box"><img id="previewLogo" alt="Restaurant logo" /></div>
-        </div>
 
-        <div class="photo-frame">
-          <img id="previewPhoto" alt="Dish photo" />
-          <div id="photoPlaceholder" class="photo-placeholder">Upload a finished dish photograph</div>
+          <div class="photo-frame">
+            <img id="previewPhoto" alt="Dish photo" />
+            <div id="photoPlaceholder" class="photo-placeholder">Upload a finished dish photograph</div>
+          </div>
         </div>
 
         <div class="content-grid">
@@ -486,7 +563,10 @@ function render() {
   document.documentElement.style.setProperty('--accent', $('accentColor').value);
 
   const style = $('templateStyle').value;
+  const layout = $('layoutStyle').value;
   const card = $('recipeCard');
+
+  card.classList.toggle('layout-split', layout === 'split');
   if (style === 'modern') {
     card.style.setProperty('--paper', '#ffffff');
     $('previewRestaurant').style.fontFamily = 'Montserrat, Arial, sans-serif';
@@ -505,7 +585,14 @@ function render() {
   $('previewPhoto').style.objectPosition = `${$('posX').value}% ${$('posY').value}%`;
   $('previewPhoto').style.objectFit = $('photoFit').value;
   $('previewPhoto').style.transform = `scale(${$('photoZoom').value / 100}) rotate(${$('photoRotate').value}deg)`;
-  document.querySelector('.photo-frame').style.height = `${$('photoHeight').value}px`;
+  const photoFrame = document.querySelector('.photo-frame');
+  if (layout === 'split') {
+    photoFrame.style.height = 'auto';
+    photoFrame.style.minHeight = `${Math.max(300, Number($('photoHeight').value))}px`;
+  } else {
+    photoFrame.style.height = `${$('photoHeight').value}px`;
+    photoFrame.style.minHeight = '0';
+  }
 
   const logoBox = document.querySelector('.logo-box');
   const logoImg = $('previewLogo');
@@ -680,6 +767,7 @@ function saveBrand() {
     brandColor: $('brandColor').value,
     accentColor: $('accentColor').value,
     templateStyle: $('templateStyle').value,
+    layoutStyle: $('layoutStyle').value,
     logoSize: $('logoSize').value,
     logoBoxWidth: $('logoBoxWidth').value,
     logoPosX: $('logoPosX').value,
@@ -774,6 +862,7 @@ async function saveCard() {
       brandColor: $('brandColor').value,
       accentColor: $('accentColor').value,
       templateStyle: $('templateStyle').value,
+      layoutStyle: $('layoutStyle').value,
       photoSettings: {
         posX: $('posX').value,
         posY: $('posY').value,
@@ -811,6 +900,7 @@ async function loadCard(id) {
   $('brandColor').value = card.brandColor || '#7b1e1e';
   $('accentColor').value = card.accentColor || '#d8b56a';
   $('templateStyle').value = card.templateStyle || 'classic';
+  $('layoutStyle').value = card.layoutStyle || 'stacked';
   if (card.photoSettings) {
     $('posX').value = card.photoSettings.posX ?? 50;
     $('posY').value = card.photoSettings.posY ?? 50;
@@ -947,7 +1037,7 @@ function switchTab(id) {
 }
 
 document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
-[...fields, 'brandColor','accentColor','templateStyle','posX','posY','photoZoom','photoHeight','photoRotate','photoFit','logoSize','logoBoxWidth','logoPosX','logoPosY','logoAlign'].forEach(id => $(id).addEventListener('input', render));
+[...fields, 'brandColor','accentColor','templateStyle','layoutStyle','posX','posY','photoZoom','photoHeight','photoRotate','photoFit','logoSize','logoBoxWidth','logoPosX','logoPosY','logoAlign'].forEach(id => $(id).addEventListener('input', render));
 
 $('photoInput').addEventListener('change', e => {
   const file = e.target.files[0];
@@ -1082,6 +1172,10 @@ async function extractRecipeText(file) {
   throw new Error('Unsupported recipe format. Use DOCX, RTF, TXT, MD, or CSV.');
 }
 
+
+
+
+
 $('recipeFileInput').addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
@@ -1107,6 +1201,7 @@ $('resetBrandBtn').onclick = () => {
   $('brandColor').value = '#7b1e1e';
   $('accentColor').value = '#d8b56a';
   $('templateStyle').value = 'classic';
+  $('layoutStyle').value = 'stacked';
   $('logoSize').value = 100;
   $('logoBoxWidth').value = 120;
   $('logoPosX').value = 0;
